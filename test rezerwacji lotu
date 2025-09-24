@@ -1,0 +1,58 @@
+import { test, expect } from '@playwright/test';
+
+test('Rezerwacja lotu Boston → Berlin', async ({ page }) => {
+  // 1) Otwórz główną stronę i poczekaj na tytuł
+  await page.goto('https://www.blazedemo.com');
+  await expect(page).toHaveTitle('BlazeDemo');
+
+  // 2) Wybierz trasę Boston → Berlin i kliknij „Find Flights”
+  await page.selectOption('select[name="fromPort"]', { label: 'Boston' });
+  await page.selectOption('select[name="toPort"]', { label: 'Berlin' });
+  await page.click('input[type="submit"]');
+
+  // 3) Zweryfikuj, że jesteś na /reserve.php i nagłówek jest poprawny
+  await expect(page).toHaveURL(/\/reserve\.php/);
+  await expect(page.locator('h3').first()).toContainText('Flights from Boston to Berlin');
+
+  // 4) Wybierz pierwszy lot
+  const rows = page.locator('table.table tbody tr');
+  const rowCount = await rows.count();
+  expect(rowCount).toBeGreaterThan(0);
+  await rows.first().locator('input[type="submit"]').click();
+
+  // 5) Poczekaj na formularz zakupu
+  await expect(page).toHaveURL(/\/purchase\.php/);
+
+  // 6) Wypełnij dane pasażera
+  await page.fill('#inputName', 'Jan Kowalski');
+  await page.fill('#address', 'ul. Marszałkowska 1, Warszawa');
+  await page.fill('#city', 'Warszawa');
+  await page.fill('#state', 'Mazowieckie');
+  await page.fill('#zipCode', '00-001');
+  await page.fill('#creditCardNumber', '4111111111111111');
+
+  // miesiąc i rok po name
+  await page.locator('input[name="creditCardMonth"]').fill('12');
+  await page.locator('input[name="creditCardYear"]').fill('2025');
+
+  await page.fill('#nameOnCard', 'JAN KOWALSKI');
+
+  // opcjonalny checkbox „Remember me”
+  const remember = page.locator('#rememberMe');
+  if (await remember.count()) {
+    await remember.check().catch(() => {});
+  }
+
+  // 7) Kup
+  await page.click('input[type="submit"]');
+
+  // 8) Weryfikacja potwierdzenia
+  await expect(page.locator('h1')).toHaveText(/Thank you for your purchase/);
+
+  // 9) Sprawdź numer potwierdzenia (pierwsza komórka wiersza wyników)
+  const confirmationId = (await page
+      .locator('table tbody tr:nth-child(1) td:nth-child(2)')
+      .innerText()).trim();
+
+  expect(confirmationId).toMatch(/^\d+$/);
+});
