@@ -1,0 +1,26 @@
+import { test, expect } from '@playwright/test';
+
+const PRODUCT_URL = 'http://www.selenium-shop.pl/produkt/koszulka-manchester-fc-city/';
+
+test('Dodaj i usuń produkt z koszyka (z pauzą 5s)', async ({ page }) => {
+    // 1. Otwórz stronę produktu i dodaj go do koszyka
+    await page.goto(PRODUCT_URL);
+    await page.waitForSelector('button.single_add_to_cart_button', { state: 'visible' });
+    await page.click('button.single_add_to_cart_button');
+
+    // 1a. Odczekaj 5 sekund (np. na animację/AJAX)
+    await page.waitForTimeout(5000);
+
+    // 2. Przejdź do koszyka przez komunikat
+    await page.waitForSelector('.woocommerce-message a', { state: 'visible' });
+    await page.click('.woocommerce-message a');
+
+    // 3. Usuń produkt z koszyka
+    await page.waitForSelector('a.remove', { state: 'visible' });
+    await page.click('a.remove');
+
+    // 4. Poczekaj na komunikat o pustym koszyku i zweryfikuj jego treść
+    const emptyMsg = page.locator('.cart-empty');
+    await expect(emptyMsg).toBeVisible();
+    await expect(emptyMsg).toContainText('Twój koszyk jest pusty');
+});
