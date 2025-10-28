@@ -1,0 +1,64 @@
+import { test, expect } from '@playwright/test';
+
+const URL = 'https://www.blazedemo.com';
+const TITLE = 'BlazeDemo';
+
+const scenariusze: [string, string][] = [
+    ["Boston",      "Berlin"],
+    ["Paris",       "Rome"],
+    ["Philadelphia","London"],
+    ["Portland",    "New York"],
+];
+
+test.describe('Rezerwacja wielu tras ✈️', () => {
+    for (const [src, dst] of scenariusze) {
+        test(`Rezerwacja lotu z ${src} do ${dst}`, async ({ page }) => {
+            // 1) Otwórz stronę i wybierz trasę
+            await page.goto(URL);
+            await expect(page).toHaveTitle(TITLE);
+            await page.selectOption('select[name="fromPort"]', { label: src });
+            await page.selectOption('select[name="toPort"]', { label: dst });
+            await page.locator('input[type="submit"]').click();
+
+            // 2) Sprawdź listę ofert
+            await expect(page).toHaveURL(/.*reserve\.php.*/);
+            const header = await page.locator('h3').textContent();
+            expect(header).toContain(`Flights from ${src} to ${dst}`);
+
+            const rows = page.locator('table.table tbody tr');
+            const rowCount = await rows.count();
+            expect(rowCount).toBeGreaterThan(0);
+            await rows.first().locator('input[type="submit"]').click();
+
+            // 3) Formularz zakupu
+            await expect(page).toHaveURL(/.*purchase\.php.*/);
+            await page.fill('#inputName', 'Jan Kowalski');
+            await page.fill('#address', 'ul. Przykładowa 1');
+            await page.fill('#city', 'Warszawa');
+            await page.fill('#state', 'Mazowieckie');
+            await page.fill('#zipCode', '00-001');
+            await page.fill('#creditCardNumber', '4111111111111111');
+            await page.fill('input[name="creditCardMonth"]', '12');
+            await page.fill('input[name="creditCardYear"]', '2025');
+            await page.fill('#nameOnCard', 'JAN KOWALSKI');
+
+            const rememberMe = page.locator('#rememberMe');
+            if (await rememberMe.count()) {
+                if (!(await rememberMe.isChecked())) {
+                    await rememberMe.check();
+                }
+            }
+
+            await page.locator('input[type="submit"]').click();
+
+            // 4) Sprawdź potwierdzenie
+            const title = await page.locator('h1').textContent();
+            expect(title).toContain('Thank you for your purchase');
+            const confirmationId = await page.locator('table tbody tr:nth-child(1) td:nth-child(2)').textContent();
+            expect(confirmationId?.trim()).toMatch(/^\d+$/);
+
+            // Pauza
+            await page.waitForTimeout(1000);
+        });
+    }
+});
