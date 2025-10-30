@@ -1,0 +1,15 @@
+import { test, expect } from '@playwright/test';
+
+test('check if cart is empty', async ({ page }) => {
+    // 1. Przejdź do strony koszyka
+    await page.goto('http://www.selenium-shop.pl/koszyk/');
+
+    // 2. Sprawdź, czy widoczny jest komunikat o pustym koszyku
+    const emptyCartMessage = page.locator('.cart-empty');
+
+    // 3. Asercja: komunikat powinien być widoczny
+    await expect(emptyCartMessage).toBeVisible();
+
+    // 4. Asercja: treść komunikatu zawiera "Twój koszyk jest pusty"
+    await expect(emptyCartMessage).toContainText('Twój koszyk jest pusty');
+});
