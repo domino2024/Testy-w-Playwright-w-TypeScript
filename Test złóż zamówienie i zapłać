@@ -1,0 +1,48 @@
+import { test, expect } from '@playwright/test';
+
+const PRODUCTS = [
+    "http://www.selenium-shop.pl/produkt/koszulka-tottenham-hotspur-f-c/",
+    "http://www.selenium-shop.pl/produkt/14/",
+    "http://www.selenium-shop.pl/produkt/koszulka-liverpool-fc/",
+];
+
+const CART_URL = "http://www.selenium-shop.pl/koszyk/";
+const CHECKOUT_URL = "http://www.selenium-shop.pl/zamowienie/";
+
+test('checkout and click buy with flexible payment', async ({ page }) => {
+    // 1. Dodaj trzy koszulki do koszyka
+    for (const url of PRODUCTS) {
+        await page.goto(url);
+
+        const qtyInput = await page.locator('input.qty');
+        if (await qtyInput.isVisible()) {
+            await qtyInput.fill('1');
+        }
+
+        await page.locator('button.single_add_to_cart_button').click();
+        await page.waitForSelector('.woocommerce-message');
+    }
+
+    // 2. Przejdź do koszyka, potem do zamówienia
+    await page.goto(CART_URL);
+    await page.goto(CHECKOUT_URL);
+
+    // 3. Wypełnij wymagane pola billingowe
+    await page.fill('#billing_first_name', 'Jan');
+    await page.fill('#billing_last_name', 'Kowalski');
+    await page.fill('#billing_address_1', 'ul. Testowa 1');
+    await page.fill('#billing_postcode', '00-001');
+    await page.fill('#billing_city', 'Warszawa');
+    await page.fill('#billing_phone', '123456789');
+    await page.fill('#billing_email', 'jan.kowalski@example.com');
+
+    // 4. Wybierz pierwszy dostępny sposób płatności
+    const firstPaymentLabel = page.locator('li.wc_payment_method label').first();
+    await firstPaymentLabel.click();
+
+    // 5. Kliknij "Kupuję i płacę"
+    await page.locator('#place_order').click();
+
+    // 6. Potwierdzenie — jeśli nie ma błędów, test uznajemy za zaliczony
+    await expect(page.locator('.woocommerce-thankyou-order-received')).toBeVisible();
+});
