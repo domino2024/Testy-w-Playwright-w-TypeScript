@@ -1,0 +1,26 @@
+import { test, expect } from '@playwright/test';
+
+const LOGIN = 'demo@example.com';
+const PASSWORD = 'Demo123!';
+
+test('prefill login and password fields with delay', async ({ page }) => {
+    // 1. Przejdź do strony logowania
+    await page.goto('http://www.selenium-shop.pl/moje-konto/');
+
+    // 2. Poczekaj aż pole loginu będzie widoczne
+    await expect(page.locator('#username')).toBeVisible();
+
+    // 3. Wpisz dane logowania
+    await page.fill('#username', LOGIN);
+    await page.fill('#password', PASSWORD);
+
+    // 4. Dodaj pauzę 3 sekundy
+    await page.waitForTimeout(3000);
+
+    // 5. Asercje – sprawdź, czy pola zawierają wpisane wartości
+    const usernameValue = await page.locator('#username').inputValue();
+    const passwordValue = await page.locator('#password').inputValue();
+
+    expect(usernameValue).toBe(LOGIN);
+    expect(passwordValue).toBe(PASSWORD);
+});
