@@ -1,0 +1,24 @@
+import { test, expect } from '@playwright/test';
+
+const BASE_URL = 'http://www.selenium-shop.pl';
+
+test('Raport linków zewnętrznych i ich targetów', async ({ page }) => {
+    await page.goto(`${BASE_URL}/o-nas/`, { waitUntil: 'networkidle' });
+
+    const externalLinks = page.locator('a[href^="http"]');
+    const count = await externalLinks.count();
+
+    console.log(`🔗 Znaleziono ${count} linków zewnętrznych:`);
+
+    for (let i = 0; i < count; i++) {
+        const link = externalLinks.nth(i);
+        const href = await link.getAttribute('href');
+        const target = await link.getAttribute('target');
+
+        if (!href || href.startsWith(BASE_URL)) continue;
+
+        console.log(`- ${href}  →  target: ${target ?? 'brak'}`);
+    }
+
+    expect(count).toBeGreaterThan(0);
+});
