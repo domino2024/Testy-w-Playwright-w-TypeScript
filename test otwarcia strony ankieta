@@ -1,0 +1,14 @@
+// tests/o-nas.spec.ts
+import { test, expect } from '@playwright/test';
+
+test('Strona O Nas powinna się poprawnie załadować', async ({ page }) => {
+  await page.goto('http://www.selenium-shop.pl/o-nas/', { timeout: 60000, waitUntil: 'networkidle' });
+
+  await expect(page).toHaveURL(/o-nas/);
+
+  const header = page.locator('h1');
+  await expect(header).toHaveCount(1);
+
+  const headerText = await header.innerText();
+  expect(headerText.length).toBeGreaterThan(0);
+});
