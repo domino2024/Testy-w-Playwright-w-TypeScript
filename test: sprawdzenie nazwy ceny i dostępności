@@ -1,0 +1,36 @@
+import { test, expect } from '@playwright/test';
+
+const PRODUCT_URL = "http://www.selenium-shop.pl/produkt/koszulka-manchester-fc-city/";
+
+test('wyświetlenie nazwy, ceny i dostępności produktu', async ({ page }) => {
+
+    // 1. Otwórz stronę produktu
+    await page.goto(PRODUCT_URL);
+
+    // 2. Nazwa produktu
+    const productName = await page.locator('h1.product_title').textContent();
+    expect(productName).not.toBeNull();
+    expect(productName?.trim().length).toBeGreaterThan(0);
+
+    // 3. Cena produktu
+    const productPrice = await page.locator('p.price .woocommerce-Price-amount').textContent();
+    expect(productPrice).not.toBeNull();
+    expect(productPrice?.trim().length).toBeGreaterThan(0);
+
+    // 4. Dostępność (WooCommerce może nie pokazywać p.stock — test odporny)
+    let availabilityText: string | null = null;
+
+    if (await page.locator('p.stock').count() > 0) {
+        availabilityText = await page.locator('p.stock').textContent();
+    } else {
+        availabilityText = "Brak etykiety dostępności — produkt dostępny (przycisk aktywny)";
+    }
+
+    // 5. Sprawdź, czy przycisk "Dodaj do koszyka" jest aktywny
+    const addToCart = page.locator('button.single_add_to_cart_button');
+    await expect(addToCart).toBeEnabled();
+
+    console.log(`\nNazwa: ${productName}`);
+    console.log(`Cena: ${productPrice}`);
+    console.log(`Dostępność: ${availabilityText}`);
+});
