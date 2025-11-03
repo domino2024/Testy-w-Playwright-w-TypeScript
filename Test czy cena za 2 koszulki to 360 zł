@@ -1,0 +1,39 @@
+import { test, expect } from '@playwright/test';
+
+const PRODUCT_URL = "http://www.selenium-shop.pl/produkt/koszulka-manchester-fc-city/";
+const CART_URL = "http://www.selenium-shop.pl/koszyk/";
+
+test('czy cena za 2 koszulki jest 360 zł', async ({ page }) => {
+
+    // 1. Otwórz stronę produktu
+    await page.goto(PRODUCT_URL);
+
+    // 2. Ustaw ilość na 2
+    const qtyInput = page.locator('input.qty');
+    await qtyInput.fill('2');
+
+    // 3. Kliknij "Dodaj do koszyka"
+    await page.click('button.single_add_to_cart_button');
+
+    // 4. Poczekaj na komunikat AJAX "Dodano do koszyka"
+    await page.waitForSelector('.woocommerce-message', { timeout: 5000 });
+
+    // 5. Przejdź do koszyka
+    await page.goto(CART_URL);
+
+    // 6. Pobierz cenę z koszyka
+    // Playwright ogarnia oba przypadki: <span> lub <bdi>
+    const priceLocator = page.locator('td.product-subtotal .woocommerce-Price-amount, td.product-subtotal bdi');
+    const priceText = await priceLocator.textContent();
+
+    if (!priceText) throw new Error("Nie udało się pobrać ceny z koszyka!");
+
+    // 7. Oczyść tekst z waluty i zamień na liczbę
+    const cleanPrice = priceText.replace(/[^0-9.,]/g, "").replace(",", ".");
+    const cartTotal = parseFloat(cleanPrice);
+
+    console.log(`Cena w koszyku: ${cartTotal} zł`);
+
+    // 8. Asercja – test przechodzi TYLKO jeśli cena = 360
+    expect(cartTotal).toBe(360);
+});
