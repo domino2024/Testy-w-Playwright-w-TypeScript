@@ -1,0 +1,35 @@
+import { test, expect } from "@playwright/test";
+
+const PRODUCT_URL = "http://www.selenium-shop.pl/produkt/koszulka-manchester-fc-city/";
+
+test("Niepoprawny adres i telefon blokują zamówienie", async ({ page }) => {
+  await page.goto(PRODUCT_URL);
+
+  await page.fill("input.qty", "2");
+  await page.click("button.single_add_to_cart_button");
+
+  await page.click(".woocommerce-message a");     // Wyświetl koszyk
+  await page.click(".checkout-button");            // Przejdź do zamówienia
+
+  await page.fill("#billing_first_name", "Jan");
+  await page.fill("#billing_last_name", "Kowalski");
+  await page.fill("#billing_email", "jan@test.com");
+  await page.fill("#billing_address_1", "?");      // ❌ zły adres
+  await page.fill("#billing_city", "Warszawa");
+  await page.fill("#billing_postcode", "00-001");
+  await page.fill("#billing_phone", "abcd123");    // ❌ zły telefon
+
+  await page.click("#place_order");
+
+  const errorBox = page.locator("ul.woocommerce-error");
+  await expect(errorBox).toBeVisible();
+
+  const errorText = (await errorBox.textContent())?.toLowerCase() ?? "";
+
+  expect(
+    errorText.includes("telefon") || errorText.includes("adres")
+  ).toBeTruthy();
+
+ 
+  await page.waitForTimeout(3000);
+});
