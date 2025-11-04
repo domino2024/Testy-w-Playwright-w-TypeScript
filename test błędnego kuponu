@@ -1,0 +1,27 @@
+import { test, expect } from "@playwright/test";
+
+const PRODUCT_URL = "http://www.selenium-shop.pl/produkt/koszulka-manchester-fc-city/";
+const INVALID_COUPON = "XYZ123";
+
+test("Niepoprawny kupon rabatowy wyświetla komunikat błędu", async ({ page }) => {
+
+    await page.goto(PRODUCT_URL);
+    await page.locator("button.single_add_to_cart_button").click();
+    await page.locator(".woocommerce-message a").click();
+
+    await page.locator("#coupon_code").fill(INVALID_COUPON);
+    await page.locator("button[name='apply_coupon']").click();
+
+    const errorBox = page.locator("ul.woocommerce-error");
+    await expect(errorBox).toBeVisible();
+
+    const errorText = (await errorBox.textContent())?.toLowerCase() ?? "";
+
+    // ✅ poprawiona asercja
+    expect(
+        errorText.includes("nieprawidłowy") || errorText.includes("nie istnieje")
+    ).toBeTruthy();
+
+    //  Pauza 3 sekundy, aby zobaczyć błąd
+    await page.waitForTimeout(3000);
+});
