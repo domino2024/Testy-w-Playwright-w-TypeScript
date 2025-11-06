@@ -1,0 +1,19 @@
+import { test, expect } from "@playwright/test";
+
+const BASE_URL = "https://conduit-realworld-example-app.fly.dev/#/";
+
+test("Navbar contains Home, Login and Sign up links", async ({ page }) => {
+    await page.goto(BASE_URL);
+
+    //  Czekamy aż navbar się wyświetli
+    const navbar = page.locator("nav.navbar");
+    await expect(navbar).toBeVisible();
+
+    //  Sprawdzamy obecność poszczególnych linków
+    await expect(navbar).toContainText("Home");
+    await expect(navbar).toContainText("Login");
+    await expect(navbar).toContainText("Sign up");
+
+    //  Log w konsoli Playwrighta (opcjonalny)
+    console.log(" Navbar zawiera wszystkie wymagane linki");
+});
